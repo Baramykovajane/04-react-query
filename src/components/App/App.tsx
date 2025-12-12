@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
 import { toast } from "react-hot-toast";
-
 import SearchBar from "../SearchBar/SearchBar";
 import MovieGrid from "../MovieGrid/MovieGrid";
 import Loader from "../Loader/Loader";
@@ -18,7 +17,8 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError } = useMovies(query, page);
+  const { data, isLoading, isFetching, isError, isSuccess } = useMovies(query, page);
+
 
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
@@ -29,18 +29,20 @@ export default function App() {
     setSelectedMovie(null);
   };
 
-  if (!isLoading && !isError && query && movies.length === 0) {
-    toast.error("No movies found for your request.");
-  }
+  useEffect(() => {
+    if (!isLoading && !isFetching && isSuccess && query && movies.length === 0) {
+      toast.error("No movies found for your request.");
+    }
+  }, [isLoading, isFetching, isSuccess, query, movies.length]);
 
   return (
     <>
       <SearchBar onSubmit={handleSearch} />
 
-      {isLoading && <Loader />}
+      {(isLoading || isFetching) && <Loader />}
       {isError && <ErrorMessage />}
 
-      {!isLoading && !isError && (
+      {isSuccess && movies.length > 0 && (
         <>
           {totalPages > 1 && (
             <ReactPaginate
